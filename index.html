@@ -94,6 +94,12 @@
         /* 忽略點擊事件 */
         pointer-events: none;
       }
+      #circle {
+        pointer-events: none;
+      }
+      #four {
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
@@ -210,7 +216,7 @@
         }, 1000);
       });
       //當點擊殭屍時把殭屍換成血攤，並加分
-      $("img").on("click", function () {
+      $("#game").on("click", "img.zombie", function () {
         $(this).attr("src", "./img/blood.png");
         $(this).removeClass("zombie").addClass("blood");
         $(this).stop();
@@ -219,6 +225,7 @@
         $("#score").text(score);
         console.log("打死了一隻殭屍");
       });
+
       $("#first").on("click", function () {
         console.log("點擊到了第1層");
       });
