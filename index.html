@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>light</title>
+    <style>
+      body,
+      html {
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        cursor: url("./img/cursor.png") 50 50, auto;
+      }
+      .notice {
+        position: absolute;
+        z-index: 10;
+        width: 50%;
+        left: calc(50% - 25%);
+        bottom: 15%;
+        text-align: center;
+      }
+      h1,
+      p {
+        font-family: "Roboto", Arial, Helvetica, sans-serif;
+        color: #fff;
+        margin: 0;
+      }
+      h1 {
+        text-transform: uppercase;
+        font-size: 3em;
+      }
+      p {
+        font-size: 1em;
+      }
+      .wrapper {
+      }
+      .mask-bg-color {
+        background-color: #333;
+      }
+      .blend-multiply {
+        mix-blend-mode: multiply;
+      }
+
+      .full-size {
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      .blend-screen {
+        mix-blend-mode: screen;
+      }
+
+      .animated-bg {
+        background-image: url("./img/BG.jpg");
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+      }
+      .element-mask {
+        background-color: #fff;
+      }
+
+      .circle-follow {
+        position: absolute;
+        overflow: hidden;
+        background-color: #000000;
+        width: 320px;
+        height: 320px;
+        top: calc(50% - 160px);
+        left: calc(50% - 160px);
+        border-radius: 160px;
+        transition: opacity 0.3s cubic-bezier(0.52, 0.01, 0.16, 1);
+        opacity: 0;
+      }
+
+      .circle-follow.moving {
+        opacity: 1;
+      }
+      /* 殭屍CSS設定 */
+      #game > img {
+        height: 750px;
+        position: absolute;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      .blood {
+        /* 忽略點擊事件 */
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="first" class="wrapper full-size">
+      <!-- 這個 div 處理背景顏色 -->
+      <div id="sec" class="mask-bg-color full-size"></div>
+      <!-- 這個 div 使用混合模式 multiply apply 包裝所有其他元素 -->
+      <div id="thrid" class="blend-multiply full-size">
+        <!-- 這個 div 處理背景元素（可以是圖像、視頻或 gif）-->
+        <div id="game" class="animated-bg full-size"></div>
+        <!-- 這個 div 使用混合模式屏幕應用和背景顏色設置為#ffffff = white background 包裹被屏蔽的元素 -->
+        <div id="four" class="blend-screen element-mask full-size">
+          <!-- 這個跨度顯示被屏蔽的元素-->
+          <span id="circle" class="circle-follow"> </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="notice">
+      <h1>殭屍跑到村子中啦! 拜託你打倒他們吧!</h1>
+      <p>
+        最高分<span id="highestScore">0</span>分 分數<span id="score">0</span>分
+        遊戲剩餘時間：<span id="time">0</span>秒
+      </p>
+      <button id="gameStart">遊戲開始</button>
+    </div>
+    <!-- 引入JQ -->
+    <script src="./jquery-3.6.4.min.js"></script>
+    <!-- 引入sweetalert2 -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.3/sweetalert2.all.min.js"
+      integrity="sha512-/iBgV43zPirSC0tue+PT/1VHGs7En24twBmT+sVMgn9PTaOpKfbgIyL5YsGKlbAIxcwz9S8W/YEnYjpIYj2Axw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script>
+      //創造隨機數涵式
+      const random = (num) => {
+        return Math.round(Math.random() * num);
+      };
+      //移動殭屍的函式
+      function moveZombie(id) {
+        $(`#zombie${id}`).animate(
+          {
+            top: `${random(100)}%`,
+            left: `${random(100)}%`,
+          },
+          10000,
+          function () {
+            moveZombie(id);
+          }
+        );
+      }
+
+      //基礎設定
+      let time = 1000;
+      let score = 0;
+      let highestScore = 0;
+      let zbNumber = 0;
+      let startBtn = $("#gameStart");
+      //設定最高分，如果沒有最高分則設定為 0
+      if (localStorage.getItem("highestScore") == null) {
+        localStorage.setItem("highestScore", highestScore);
+      } else {
+        $("#highestScore").text(localStorage.getItem("highestScore"));
+      }
+      startBtn.on("click", function () {
+        console.log("遊戲開始");
+        //讓開始按鈕無法再按
+        // 停用開始按鈕
+        $(this).attr("disabled", true);
+        //分數清零
+        score = 0;
+        $("#score").text(score);
+        $("#time").text(`${time}`);
+
+        //開始遊戲計時：
+        let timer = setInterval(() => {
+          //設定遊戲計時
+          time--;
+          $("#time").text(`${time}`);
+          //生成殭屍 (每秒有50%機率生成殭屍) ，場上最多5隻殭屍
+          if (random(10) > 5 && $(".zombie").length < 5) {
+            $("#game").append(
+              `<img src ="./img/zombies.gif" class="zombie" 
+              style="top:${random(100)}%; left:${random(100)}%" 
+              id=zombie${zbNumber}></img>`
+            );
+            //設定殭屍移動
+            moveZombie(zbNumber);
+            zbNumber++;
+          }
+          //當時間歸零後停止遊戲
+          if (time == 0) {
+            clearInterval(timer);
+            $("#game").html("");
+            console.log("時間到");
+            Swal.fire({
+              icon: "success",
+              title: `恭喜你通關，你獲得的分數為${score}`,
+              showConfirmButton: false,
+              timer: 1500,
+            });
+            startBtn.attr("disabled", false);
+            //時間恢復
+            time = 10;
+            //如果當局分數高於最高分數則更新最高分數
+            if (score > highestScore) {
+              highestScore = score;
+              $("#highestScore").text(highestScore);
+              localStorage.setItem("highestScore", highestScore);
+            }
+          }
+        }, 1000);
+      });
+      //當點擊殭屍時把殭屍換成血攤，並加分
+      $("img").on("click", function () {
+        $(this).attr("src", "./img/blood.png");
+        $(this).removeClass("zombie").addClass("blood");
+        $(this).stop();
+        $(this).fadeTo(1000, 0);
+        score++;
+        $("#score").text(score);
+        console.log("打死了一隻殭屍");
+      });
+      $("#first").on("click", function () {
+        console.log("點擊到了第1層");
+      });
+      $("#sec").on("click", function () {
+        console.log("點擊到了第2層");
+      });
+      $("#thrid").on("click", function () {
+        console.log("點擊到了第3層");
+      });
+      $("#game").on("click", function () {
+        console.log("點擊到了遊戲");
+      });
+      $("#four").on("click", function () {
+        console.log("點擊到了第4層");
+      });
+      $("#circle").on("click", function () {
+        console.log("點擊到了圓圈層");
+      });
+
+      //遮罩效果
+      jQuery(document).ready(function ($) {
+        // set the variables
+        var timer;
+        var mouseX = 0,
+          mouseY = 0;
+        var xp = 0,
+          yp = 0;
+        var circle = $("#circle");
+
+        function mouseStopped() {
+          // if mouse stop moving remove class moving
+          // it will hide the circle with opacity transition
+          circle.removeClass("moving");
+        }
+
+        $(document).mousemove(function (e) {
+          // if mouse start moving add class moving
+          // it will show the circle with opacity transition
+          circle.addClass("moving");
+          // get the mouse position minus 160px to center the circle
+          mouseX = e.pageX - 160;
+          mouseY = e.pageY - 160;
+          // if mouse stop moving clear timer and call mouseStopped function
+          clearTimeout(timer);
+          timer = setTimeout(mouseStopped, 3000);
+        });
+
+        // set the momentum with setInterval function
+        var loop = setInterval(function () {
+          // change 12 to alter damping higher is slower
+          xp += (mouseX - xp) / 6;
+          yp += (mouseY - yp) / 6;
+          circle.css({ left: xp + "px", top: yp + "px" }); //
+        }, 30);
+      });
+    </script>
+  </body>
+</html>
