@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>light</title>
+    <title>zombieGame</title>
     <style>
       body,
       html {
@@ -20,7 +20,7 @@
         z-index: 10;
         width: 50%;
         left: calc(50% - 25%);
-        bottom: 15%;
+        top: 5%;
         text-align: center;
       }
       h1,
@@ -35,11 +35,11 @@
       }
       p {
         font-size: 1em;
+        line-height: 2;
       }
-      .wrapper {
-      }
+
       .mask-bg-color {
-        background-color: #333;
+        background-color: pink;
       }
       .blend-multiply {
         mix-blend-mode: multiply;
@@ -100,6 +100,9 @@
       #four {
         pointer-events: none;
       }
+      .none {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -121,10 +124,41 @@
     <div class="notice">
       <h1>殭屍跑到村子中啦! 拜託你打倒他們吧!</h1>
       <p>
-        最高分<span id="highestScore">0</span>分 分數<span id="score">0</span>分
-        遊戲剩餘時間：<span id="time">0</span>秒
+        最高分<span id="highestScore">0</span>分 <br />
+        分數<span id="score">0</span>分 <br />
+        遊戲剩餘時間：<span id="time">0</span>秒 <br />
       </p>
-      <button id="gameStart">遊戲開始</button>
+      <p id="setting">
+        殭屍移動速度<select name="speed" id="speed">
+          <option value="10000">慢</option>
+          <option value="5000">中</option>
+          <option value="2500">快</option>
+        </select>
+        &nbsp;&nbsp;殭屍出現上限
+        <select name="zbNum" id="zbNum">
+          <option value="5">5隻</option>
+          <option value="10">10隻</option>
+          <option value="20">20隻</option>
+        </select>
+        &nbsp;&nbsp;遊戲時間設定<input
+          id="timeSec"
+          type="number"
+          min="10"
+          size="5"
+          value="30"
+        />
+        秒
+        <br />
+        畫面遮罩顏色
+        <input
+          id="element-mask-color"
+          type="text"
+          placeholder="輸入格式參考RGB代碼 #333333，無輸入無遮罩，輸入不符合格式則默認顏色#333"
+          size="68"
+        />
+        <br />
+        <button id="gameStart">遊戲開始</button>
+      </p>
     </div>
     <!-- 引入JQ -->
     <script src="./jquery-3.6.4.min.js"></script>
@@ -141,59 +175,118 @@
         return Math.round(Math.random() * num);
       };
       //移動殭屍的函式
-      function moveZombie(id) {
+      function moveZombie(id, speedSetting) {
         $(`#zombie${id}`).animate(
           {
             top: `${random(100)}%`,
             left: `${random(100)}%`,
           },
-          10000,
+          speedSetting,
           function () {
-            moveZombie(id);
+            moveZombie(id, speedSetting);
           }
         );
       }
+      //判斷輸入是否為顏色
+      function isColor(color) {
+        if (color.length <= 7 && color[0] == "#") {
+          for (let i = 0; i < 7; i++) {
+            if (i == 0) continue;
+            if (
+              color[i] <= 9 ||
+              (color[i].charCodeAt() >= 65 && color[i].charCodeAt() <= 70) ||
+              (color[i].charCodeAt() >= 97 && color[i].charCodeAt() <= 102)
+            ) {
+              if (i == 6) {
+                return true;
+              }
+
+              continue;
+            } else {
+              return false;
+            }
+          }
+        } else return false;
+      }
 
       //基礎設定
-      let time = 1000;
+      let time = 0;
       let score = 0;
       let highestScore = 0;
       let zbNumber = 0;
       let startBtn = $("#gameStart");
+      let timeSec = $("#timeSec");
+      let speed = $("#speed");
+      let zbNum = $("#zbNum");
+      let elementMaskColor = $("#element-mask-color");
+
       //設定最高分，如果沒有最高分則設定為 0
       if (localStorage.getItem("highestScore") == null) {
         localStorage.setItem("highestScore", highestScore);
       } else {
         $("#highestScore").text(localStorage.getItem("highestScore"));
       }
+      //按下開始鍵後
       startBtn.on("click", function () {
+        //讓文字欄消失
+        $("#setting").addClass("none");
+        $("h1").addClass("none");
         console.log("遊戲開始");
+        //讀取遊戲設定
+        //輸入時間 = 遊戲時間
+        let timeSecSetting = Number(timeSec.val());
+        //輸入殭屍速度 = 殭屍速度
+        let speedSetting = Number(speed.val());
+        //輸入殭屍數量 = 殭屍數量
+        let zbNumSetting = Number(zbNum.val());
+        //輸入遮罩顏色 =遮罩顏色
+        let elementMaskColorSetting = elementMaskColor.val();
+        if (elementMaskColorSetting == "") {
+          //遮罩顏色
+          $(".mask-bg-color").css("background", "none");
+          //白底
+          $(".element-mask").css("background", "none");
+        } else if (isColor(elementMaskColorSetting)) {
+          //遮罩顏色
+          $(".mask-bg-color").css("background", elementMaskColorSetting);
+          //白底
+          $(".element-mask").css("background", "#fff");
+        } else {
+          //遮罩顏色
+          $(".mask-bg-color").css("background", "#333");
+          //白底
+          $(".element-mask").css("background", "#fff");
+        }
         //讓開始按鈕無法再按
         // 停用開始按鈕
         $(this).attr("disabled", true);
         //分數清零
         score = 0;
         $("#score").text(score);
+        // 時間設定
+        time = timeSecSetting;
         $("#time").text(`${time}`);
 
         //開始遊戲計時：
         let timer = setInterval(() => {
-          //設定遊戲計時
+          //設定遊戲計時倒數
           time--;
           $("#time").text(`${time}`);
-          //生成殭屍 (每秒有50%機率生成殭屍) ，場上最多5隻殭屍
-          if (random(10) > 5 && $(".zombie").length < 5) {
+          //生成殭屍 (每秒有50%機率生成殭屍) ，場上最多殭屍數量小於設定值
+          if (random(10) > 5 && $(".zombie").length < zbNumSetting) {
             $("#game").append(
-              `<img src ="./img/zombies.gif" class="zombie" 
-              style="top:${random(100)}%; left:${random(100)}%" 
+              `<img src ="./img/zombies.gif" class="zombie"
+              style="top:${random(100)}%; left:${random(100)}%"
               id=zombie${zbNumber}></img>`
             );
+            console.log("生成一隻殭屍");
             //設定殭屍移動
-            moveZombie(zbNumber);
+            moveZombie(zbNumber, speedSetting);
             zbNumber++;
           }
           //當時間歸零後停止遊戲
           if (time == 0) {
+            $("#contents").removeClass("none");
             clearInterval(timer);
             $("#game").html("");
             console.log("時間到");
@@ -205,7 +298,10 @@
             });
             startBtn.attr("disabled", false);
             //時間恢復
-            time = 10;
+            time = timeSecSetting;
+            //讓設定文字欄恢復
+            $("#setting").removeClass("none");
+            $("h1").removeClass("none");
             //如果當局分數高於最高分數則更新最高分數
             if (score > highestScore) {
               highestScore = score;
@@ -225,25 +321,25 @@
         $("#score").text(score);
         console.log("打死了一隻殭屍");
       });
-
-      $("#first").on("click", function () {
-        console.log("點擊到了第1層");
-      });
-      $("#sec").on("click", function () {
-        console.log("點擊到了第2層");
-      });
-      $("#thrid").on("click", function () {
-        console.log("點擊到了第3層");
-      });
-      $("#game").on("click", function () {
-        console.log("點擊到了遊戲");
-      });
-      $("#four").on("click", function () {
-        console.log("點擊到了第4層");
-      });
-      $("#circle").on("click", function () {
-        console.log("點擊到了圓圈層");
-      });
+      //測試畫面click功能
+      // $("#first").on("click", function () {
+      //   console.log("點擊到了第1層");
+      // });
+      // $("#sec").on("click", function () {
+      //   console.log("點擊到了第2層");
+      // });
+      // $("#thrid").on("click", function () {
+      //   console.log("點擊到了第3層");
+      // });
+      // $("#game").on("click", function () {
+      //   console.log("點擊到了遊戲");
+      // });
+      // $("#four").on("click", function () {
+      //   console.log("點擊到了第4層");
+      // });
+      // $("#circle").on("click", function () {
+      //   console.log("點擊到了圓圈層");
+      // });
 
       //遮罩效果
       jQuery(document).ready(function ($) {
