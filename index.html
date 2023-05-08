@@ -153,8 +153,8 @@
         <input
           id="element-mask-color"
           type="text"
-          placeholder="輸入格式參考RGB代碼 #333333，無輸入無遮罩，輸入不符合格式則默認顏色#333"
-          size="68"
+          placeholder="輸入格式 #333333 (一定要6碼不能縮寫)，無輸入無遮罩，輸入不符合格式則默認顏色#333"
+          size="75"
         />
         <br />
         <button id="gameStart">遊戲開始</button>
@@ -189,7 +189,7 @@
       }
       //判斷輸入是否為顏色
       function isColor(color) {
-        if (color.length <= 7 && color[0] == "#") {
+        if (color.length == 7 && color[0] == "#") {
           for (let i = 0; i < 7; i++) {
             if (i == 0) continue;
             if (
