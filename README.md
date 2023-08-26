@@ -7,4 +7,6 @@
 
 # 遊戲畫面瀏覽圖
 
-![image](https://github.com/wdaweb/jq_zombie-adad09382/blob/master/img/READMEIMG.png)
+![image](https://github.com/adad09382/zombie-game_jq/master/img/READMEIMG.png)
+
+
